@@ -94,7 +94,8 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
     fix-permissions $CONDA_DIR
 
 USER $NB_UID
-ARG PYTHON_VERSION=default
+#ARG PYTHON_VERSION=default
+ARG PYTHON_VERSION=3.7
 
 # Setup work directory for backward-compatibility
 RUN mkdir "/home/$NB_USER/work" && \
@@ -112,8 +113,8 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     echo "conda ${CONDA_VERSION}" >> $CONDA_DIR/conda-meta/pinned && \
     conda config --system --set auto_update_conda false && \
     conda config --system --set show_channel_urls true && \
-    if [ ! $PYTHON_VERSION = 'default' ]; then conda install --yes python=$PYTHON_VERSION; fi && \
-    conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> $CONDA_DIR/conda-meta/pinned && \
+    if [ ! $PYTHON_VERSION = 'default' ]; then conda install --yes python=${PYTHON_VERSION}; fi && \
+    #conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> $CONDA_DIR/conda-meta/pinned && \
     conda install --quiet --yes \
     "conda=${CONDA_VERSION}" \
     'pip' \
@@ -147,7 +148,9 @@ EXPOSE 8888
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--"]
-CMD ["start-notebook.sh"]
+ENV NB_PRIFIX /
+#CMD ["start-notebook.sh", "--notebook-dir=/home/jovyan", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--port=8888", "--NotebookApp.token=''", "--NotebookApp.password=''", "--NotebookApp.allow_origin='*'", "--NotebookApp.base_url=${NB_PREFIX}"]
+CMD ["sh","-c", "start-notebook.sh --notebook-dir=/home/jovyan --ip=0.0.0.0 --no-browser --allow-root --port=8888 --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.allow_origin='*' --NotebookApp.base_url=${NB_PREFIX}"]
 
 # Copy local files as late as possible to avoid cache busting
 COPY start.sh start-notebook.sh start-singleuser.sh /usr/local/bin/
